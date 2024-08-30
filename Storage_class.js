@@ -29,7 +29,7 @@ class StorageClass {
             if (err) {
                 console.error('Erro ao salvar o arquivo:', err);
             }
-            console.error(this.url + 'uploads/' + fileName);
+            // console.error(this.url+'uploads/'+fileName);
         });
         return this.url + 'uploads/' + fileName;
     }

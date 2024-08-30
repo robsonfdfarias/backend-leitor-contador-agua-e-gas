@@ -93,14 +93,14 @@ app.post('/upload', async (req, res) => {
   let number = await response.text();
   const generatedText = parseInt(number.replace(' ', ''));
 
-  console.log(generatedText);
+  // console.log(generatedText);
   /**
    * Confirma se não existe o registro, cria um registro com esses dados e retorna para frontend as informações
    */
   if(!verify){
     const reg = await prisma.create(imgObj, customer_code, measure_datetime, measure_type, generatedText);
     if(reg!=null){
-      console.log("Sucesso....")
+      console.log("Sucesso no cadastro e verificação. id: "+reg.id);
       res.status(200).json({ image_url: imgObj, measure_value: generatedText, measure_uuid: reg.id });
     }
   }else{
@@ -178,7 +178,7 @@ app.patch("/confirm", async (req, res) => {
    */
   const updateData = await prisma.update(measure_uuid, parseInt(confirmed_value), true);
   if(updateData!=null){
-    console.log('sucesso na atualização')
+    console.log("Sucesso na confirmação. id: "+measure_uuid);
     res.status(200).json({ success: true });
   }
   console.log('******************************')
@@ -226,25 +226,11 @@ app.get("/:customer_code/list", async (req, res) => {
   /**
    * Filtra as medidas realizados pelo cliente
    */
-  let find = null;
-  if(checked.type!=null){
-    find = {
-      customerCode: customer_code,
-      measureType: checked.type
-    }
-  }else{
-    find = {
-      customerCode: customer_code
-    }
-  }
-  const clientReg = await prisma.register.findMany({
-    where:{
-      find
-    }
-  })
-  if(clientReg.length<0){
+  const clientReg = await prisma.getMany(customer_code, checked.type);
+  if(clientReg.length<=0){
     return res.status(404).json({ error_code: 'MEASURES_NOT_FOUND', error_description: "Nenhuma leitura encontrada." });
   }else{
+    console.log('Registros listados com sucesso. cliente: '+customer_code);
     return res.status(200).json({ customer_code: customer_code, measures: clientReg });
   }
   
@@ -263,7 +249,7 @@ function checkedValueType(customer_code, measure_type){
       faileds.push("o tipo precisa ser WATER ou GAS");
       err=true;
     }else{
-      type = measure_type.toUpCase();
+      type = measure_type.toUpperCase();
     }
   }
   var error = '';

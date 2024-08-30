@@ -50,5 +50,23 @@ class PrismaReg {
     });
     return updateData;
   }
+
+  async getMany(customerCode: string, measureType: string){
+    let find = null;
+    if(measureType!=null){
+      find = {
+        customerCode: customerCode,
+        measureType: measureType
+      }
+    }else{
+      find = {
+        customerCode: customerCode
+      }
+    }
+    const lista = await this.prisma.register.findMany({
+      where: find
+    });
+    return lista;
+  }
 }
 export = PrismaReg

@@ -64,5 +64,25 @@ class PrismaReg {
             return updateData;
         });
     }
+    getMany(customerCode, measureType) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let find = null;
+            if (measureType != null) {
+                find = {
+                    customerCode: customerCode,
+                    measureType: measureType
+                };
+            }
+            else {
+                find = {
+                    customerCode: customerCode
+                };
+            }
+            const lista = yield this.prisma.register.findMany({
+                where: find
+            });
+            return lista;
+        });
+    }
 }
 module.exports = PrismaReg;

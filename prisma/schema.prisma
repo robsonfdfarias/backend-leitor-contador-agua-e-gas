@@ -3,6 +3,7 @@
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+//npx prisma migrate dev --name added_job_title
 
 generator client {
   provider = "prisma-client-js"
@@ -11,4 +12,14 @@ generator client {
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
+}
+
+model Register{
+  id String @id @default(uuid())
+  image String @unique
+  customerCode String
+  measureDatetime String
+  measureType String
+  MeterValue Int
+  confirmed Boolean
 }

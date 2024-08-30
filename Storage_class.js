@@ -1,29 +1,31 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 class StorageClass {
-    constructor(f, b, d, bu, url) {
-        this.fs = f;
-        this.bodyParse = f;
+    constructor(d, url) {
         this.dirname = d;
-        this.buffer = bu;
         this.url = url;
     }
-    convertToImage(base64, path) {
+    convertToImage(base64, Buffer) {
         // Remover o prefixo da string Base64, se presente
         const base64Data = base64.replace(/^data:image\/png;base64,/, '');
         // Converter Base64 em buffer
-        const buffer = this.buffer.from(base64Data, 'base64');
-        return this.saveImagetoServer(buffer, path);
+        let bufferC = Buffer.from(base64Data, 'base64');
+        return this.saveImagetoServer(bufferC);
     }
-    saveImagetoServer(buffer, path) {
+    saveImagetoServer(buffer) {
         // Caminho onde a imagem será salva
         const fileName = this.generateFileName();
-        const filePath = path.join(this.dirname, 'uploads', fileName);
+        const filePath = path_1.default.join(this.dirname, 'uploads', fileName);
         // Criar o diretório 'uploads' se não existir
-        if (!this.fs.existsSync(path.dirname(filePath))) {
-            this.fs.mkdirSync(path.dirname(filePath));
+        if (!fs_1.default.existsSync(path_1.default.dirname(filePath))) {
+            fs_1.default.mkdirSync(path_1.default.dirname(filePath));
         }
         // Salvar o buffer como um arquivo
-        this.fs.writeFile(filePath, buffer, (err) => {
+        fs_1.default.writeFile(filePath, buffer, (err) => {
             if (err) {
                 console.error('Erro ao salvar o arquivo:', err);
             }

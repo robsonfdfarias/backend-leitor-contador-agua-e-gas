@@ -6,6 +6,7 @@ CREATE TABLE `Register` (
     `measureDatetime` VARCHAR(191) NOT NULL,
     `measureType` VARCHAR(191) NOT NULL,
     `MeterValue` INTEGER NOT NULL,
+    `confirmed` BOOLEAN NOT NULL,
 
     UNIQUE INDEX `Register_image_key`(`image`),
     PRIMARY KEY (`id`)

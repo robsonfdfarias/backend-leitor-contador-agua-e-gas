@@ -19,10 +19,6 @@ const StorageClass = require('./Storage_class.js');
 const storage = new StorageClass(__dirname, process.env.URL);
 //----------------- fim das importações para usar na classe storage ------------------------------//
 
-const User = require('./User.js')
-const user = new User('Robson');
-user.printEx();
-
 // Inicializa o cliente da API com a chave da API
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
@@ -56,82 +52,65 @@ app.use(cors())
  * -------------------------------------------------------------------------------------------
  */
 app.post('/upload', async (req, res) => {
-  try {
-    //RECUPERA AS VARIÁVEIS ENVIADAS-------------------------
-    const { image, customer_code, measure_datetime, measure_type } = req.body;
-    /**
-     * TESTE DAS VARIÁVEIS ENVIADAS
-     */
-    const checked = checkedTypesPost(image, customer_code, measure_datetime, measure_type);
-    if (checked.filed) {
-        return res.status(400).json({ error_code: 'INVALID_DATA', error_description: checked.message });
-    }
-
-    /**
-     * SALVA A IMAGEM PARA CONSULTA POSTERIOR
-     */
-    const imgObj = storage.convertToImage(image, Buffer);
-
-    /**
-     * Verifica se já existe um cadastro desse tipo nesse mês do mesmo cliente
-     */
-    // const verify = await prisma.register.findFirst({
-    //   where: {
-    //     customerCode: customer_code,
-    //     measureDatetime: measure_datetime,
-    //     measureType: measure_type
-    //   }
-    // });
-    const verify = await prisma.findFirst(customer_code, measure_datetime, measure_type);
-    if(verify){
-      console.log('Já existe uma leitura para este tipo no mês atual');
-      return res.status(409).json({ error_code: 'DOUBLE_REPORT', error_description: "Leitura do mês já realizada" });
-    }
-
-    /**
-     * Envia a foto para o Gemini para obter o número
-     */
-    const textPrompt = `Retorne somente os números com a maior font dentro do retangulo da figura da imagem`;
-
-    // Configura o modelo
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-    // Prepara a imagem e o prompt para a API
-    const imagePart = base64ToGenerativePart(image, 'image/png'); // Ajuste o MIME type se necessário
-    const result = await model.generateContent([textPrompt, imagePart]);
-
-    // Obtém e processa a resposta
-    const response = await result.response;
-    const generatedText = await response.text();
-
-    console.log(generatedText);
-    /**
-     * Confirma se não existe o registro, cria um registro com esses dados e retorna para frontend as informações
-     */
-    if(!verify){
-      // const reg = await prisma.register.create({
-      //   data: {
-      //     image: imgObj,
-      //     customerCode: customer_code,
-      //     measureDatetime: measure_datetime,
-      //     measureType: measure_type,
-      //     MeterValue: generatedText
-      //   }
-      // })
-      const reg = await prisma.create(imgObj, customer_code, measure_datetime, measure_type, generatedText);
-      if(reg!=null){
-        res.status(200).json({ image_url: generatedText, measure_value: generatedText, measure_uuid: reg.id });
-      }
-    }
-    /**
-     * Caso ocorra algum erro no cadastro das informações, retorna uma mensagem de erro
-     */
-    res.status(400).json({ "error_code": "FAILURE_TO_RECORD_DATA", "error_description": "Falha ao registrar os dados na base de dados." });
-    
-  } catch (error) {
-    console.error('Erro ao processar a solicitação:', error);
-    res.status(500).json({ "error_code": "FAILED_TO_RECOVER_DATA", "error_description": "Falha ao recuperar o valor do LLM." });
+  //RECUPERA AS VARIÁVEIS ENVIADAS-------------------------
+  const { image, customer_code, measure_datetime, measure_type } = req.body;
+  /**
+   * TESTE DAS VARIÁVEIS ENVIADAS
+   */
+  const checked = checkedTypesPost(image, customer_code, measure_datetime, measure_type);
+  if (checked.filed) {
+      return res.status(400).json({ error_code: 'INVALID_DATA', error_description: checked.message });
   }
+
+  /**
+   * SALVA A IMAGEM PARA CONSULTA POSTERIOR
+   */
+  const imgObj = storage.convertToImage(image, Buffer);
+
+  /**
+   * Verifica se já existe um cadastro desse tipo nesse mês do mesmo cliente
+   */
+  const verify = await prisma.findFirst(customer_code, measure_datetime, measure_type);
+  if(verify){
+    console.log('Já existe uma leitura para este tipo no mês atual');
+    return res.status(409).json({ error_code: 'DOUBLE_REPORT', error_description: "Leitura do mês já realizada" });
+  }
+
+  /**
+   * Envia a foto para o Gemini para obter o número
+   */
+  const textPrompt = `Retorne somente os números com a maior font dentro do retangulo da figura da imagem`;
+
+  // Configura o modelo
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+  // Prepara a imagem e o prompt para a API
+  const imagePart = base64ToGenerativePart(image, 'image/png'); // Ajuste o MIME type se necessário
+  const result = await model.generateContent([textPrompt, imagePart]);
+
+  // Obtém e processa a resposta
+  const response = await result.response;
+  let number = await response.text();
+  const generatedText = parseInt(number.replace(' ', ''));
+
+  console.log(generatedText);
+  /**
+   * Confirma se não existe o registro, cria um registro com esses dados e retorna para frontend as informações
+   */
+  if(!verify){
+    const reg = await prisma.create(imgObj, customer_code, measure_datetime, measure_type, generatedText);
+    if(reg!=null){
+      console.log("Sucesso....")
+      res.status(200).json({ image_url: imgObj, measure_value: generatedText, measure_uuid: reg.id });
+    }
+  }else{
+  /**
+   * Caso ocorra algum erro no cadastro das informações, retorna uma mensagem de erro
+   */
+    console.log("Falha dentro do try....")
+    res.status(400).json({ "error_code": "FAILURE_TO_RECORD_DATA", "error_description": "Falha ao registrar os dados na base de dados." });
+  }
+  
 });
 function checkedTypesPost(image, customer_code, measure_datetime, measure_type){
   var faileds=[];
@@ -179,40 +158,30 @@ app.patch("/confirm", async (req, res) => {
    */
   const checked = checkedTypesPatch(measure_uuid, confirmed_value);
   if(checked.filed){
-    return res.status(400).json({ error_code: 'INVALID_DATA', error_description: checked.message });
+    res.status(400).json({ error_code: 'INVALID_DATA', error_description: checked.message });
   }
   /**
    * Verifica se o código de leitura informado existe
    */
-  const verify = prisma.register.findFirst({
-    where: {
-      id: measure_uuid
-    }
-  });
+  const verify = await prisma.findFirstPatch(measure_uuid);
   if(!verify){
-    return res.status(404).json({ error_code: 'MEASURE_NOT_FOUND', error_description: "Leitura não encontrada." });
+    res.status(404).json({ error_code: 'MEASURE_NOT_FOUND', error_description: "Leitura não encontrada." });
   }
   /**
    * Verifica se a leitura já foi confirmada
    */
   if(verify.confirmed==true){
-    return res.status(409).json({ error_code: 'CONFIRMATION_DUPLICATE', error_description: "Leitura do mês já realizada." });
+    res.status(409).json({ error_code: 'CONFIRMATION_DUPLICATE', error_description: "Leitura do mês já realizada." });
   }
   /**
    * Salva a atualização no banco de dados
    */
-  const updateData = await prisma.register.update({
-    where: {
-      id: measure_uuid
-    },
-    data: {
-      MeterValue: confirmed_value,
-      confirmed: true
-    }
-  });
+  const updateData = await prisma.update(measure_uuid, parseInt(confirmed_value), true);
   if(updateData!=null){
-    return res.status(200).json({ success: true });
+    console.log('sucesso na atualização')
+    res.status(200).json({ success: true });
   }
+  console.log('******************************')
 
 });
 
@@ -312,4 +281,7 @@ function checkedValueType(customer_code, measure_type){
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
+  console.log('');
+  console.log('-------------------------------------------------------------------------');
+  console.log('');
 });

@@ -40,5 +40,29 @@ class PrismaReg {
             return reg;
         });
     }
+    findFirstPatch(measure_uuid) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const verify = yield this.prisma.register.findFirst({
+                where: {
+                    id: measure_uuid,
+                }
+            });
+            return verify;
+        });
+    }
+    update(measure_uuid, MeterValue, confirmed) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const updateData = yield this.prisma.register.update({
+                where: {
+                    id: measure_uuid
+                },
+                data: {
+                    MeterValue: MeterValue,
+                    confirmed: confirmed
+                }
+            });
+            return updateData;
+        });
+    }
 }
 module.exports = PrismaReg;

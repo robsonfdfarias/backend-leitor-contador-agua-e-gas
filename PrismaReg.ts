@@ -28,5 +28,27 @@ class PrismaReg {
           });
         return reg;
     }
+
+    async findFirstPatch(measure_uuid: any){
+      const verify = await this.prisma.register.findFirst({
+          where: {
+            id: measure_uuid,
+          }
+        });
+      return verify;
+  }
+
+  async update(measure_uuid: string, MeterValue: number, confirmed: boolean){
+    const updateData = await this.prisma.register.update({
+      where: {
+        id: measure_uuid
+      },
+      data: {
+        MeterValue: MeterValue,
+        confirmed: confirmed
+      }
+    });
+    return updateData;
+  }
 }
 export = PrismaReg

@@ -79,7 +79,7 @@ app.post('/upload', async (req, res) => {
   /**
    * Envia a foto para o Gemini para obter o número
    */
-  const textPrompt = `Retorne somente os números com a maior font dentro do retangulo da figura da imagem`;
+  const textPrompt = `Retorne somente os números com a maior font dentro do retangulo da figura da imagem. Retorne somente números.`;
 
   // Configura o modelo
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });

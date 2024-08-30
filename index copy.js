@@ -6,11 +6,15 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 
+const querys = require('./all_function.js');
 
 //---------------- Importação do prisma ----------------------------
 const PrismaClient =  require('./PrismaReg.js');
+// const prismaClass = new PrismaClient();
 const prisma = new PrismaClient();
 prisma.prisma.$connect();
+// const prisma = prismaClass.prisma;
+// prisma.$connect();
 
 //----------------- importações para usar na classe storage ------------------------------//
 const StorageClass = require('./Storage_class.js');
@@ -25,6 +29,8 @@ const port = 3000;
 
 //permitir o acesso a pasta de imagens
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// const upload = multer({dest: 'uploads/'})
 
 // Middleware para analisar JSON
 app.use(bodyParser.json({ limit: '10mb' }));
@@ -89,6 +95,7 @@ app.post('/upload', async (req, res) => {
   let number = await response.text();
   const generatedText = parseInt(number.replace(' ', ''));
 
+  // console.log(generatedText);
   /**
    * Confirma se não existe o registro, cria um registro com esses dados e retorna para frontend as informações
    */
@@ -260,7 +267,7 @@ function checkedValueType(customer_code, measure_type){
 
 
 
-app.listen(port, async () => {
+app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
   console.log('');
   console.log('-------------------------------------------------------------------------');
